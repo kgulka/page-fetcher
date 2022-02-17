@@ -24,14 +24,39 @@ const fileSaveFn = function (localFile, bodyText) {
 }
 
 const getPageAtURL = function (url, localFileFolder, cbFileSave) {
-
   request(url, (error, response, body) => {
-    cbFileSave(localFileFolder, body);
+    if (!response) { 
+      console.log(`The website returned error.  Please enter a valid website url.`);
+      return;
+    }
+    if (response.statusCode < 300 && response.statusCode >= 200) {
+      cbFileSave(localFileFolder, body);
+    } else {
+      console.log(`The webpage returned error: ${response.statusCode}.  Please enter a valid web page url.`);
+    }
   });
 };
 
+const checkFileAndPath = function (pathAndFile, cbGetPage, url) {
+  const path = pathAndFile.substr(0,pathAndFile.lastIndexOf('/') + 1);
+  const fileName = pathAndFile.substr(pathAndFile.lastIndexOf('/') + 1);
+  //console.log("path:", path);
+  //console.log("file:", fileName);
+  if (!fs.existsSync(path)) {
+    console.log(`The file path ${path} does not exist. Please input a valid path.`)
+    process.exit;
+  }
+  if (fs.existsSync(pathAndFile)) {
+    console.log(`The file ${pathAndFile} exists. Please input a new file.`);
+  } else {
+    console.log("call get page");
+    cbGetPage(url, pathAndFile, fileSaveFn);
+  }
+}
+
+//main body
 if (process.argv.length >= 4) {
   const urlIn = process.argv[2];
-  const localFolder = process.argv[3];
-  getPageAtURL(urlIn, localFolder, fileSaveFn);
+  const localPathAndFile = process.argv[3];
+  checkFileAndPath(localPathAndFile, getPageAtURL, urlIn);
 }
